@@ -1,0 +1,22 @@
+# pulls a docker image with tested PyTorch+IPEX+Triton stack
+FROM intel/intel-extension-for-pytorch:2.1.10-xpu
+
+LABEL org.opencontainers.image.title="equitriton"
+LABEL org.opencontainers.image.description="Docker image with Intel XPU support for EquiTriton."
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/IntelLabs/EquiTriton/tree/main/docker/Dockerfile.intel"
+LABEL org.opencontainers.image.url="https://github.com/IntelLabs/EquiTriton"
+LABEL org.opencontainers.image.documentation="https://github.com/IntelLabs/EquiTriton/tree/main/README.md"
+LABEL org.opencontainers.image.version="0.1.0"
+LABEL org.opencontainers.image.created="2024-07-09"
+
+LABEL software.python.version="3.10.12"
+LABEL software.pytorch.version="2.1.0"
+LABEL software.ipex.version="2.1.10+xpu"
+LABEL software.triton.version="2.1.0"
+
+RUN pip install -U setuptools==69.5 pip
+RUN pip install https://github.com/intel/intel-xpu-backend-for-triton/releases/download/v2.1.0/triton-2.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+RUN pip install git+https://github.com/IntelLabs/EquiTriton
+
+HEALTHCHECK NONE
