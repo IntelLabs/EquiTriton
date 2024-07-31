@@ -1,4 +1,5 @@
 # EquiTriton
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/IntelLabs/EquiTriton/badge)](https://scorecard.dev/viewer/?uri=github.com/IntelLabs/EquiTriton)
 
 <div align="center">
 
