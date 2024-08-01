@@ -8,6 +8,7 @@
 [![License: Apache2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](https://opensource.org/licenses/apache-2-0)
 ![python-support](https://img.shields.io/badge/Python-3.10%7C3.11%7C3.12-3?logo=python)
 ![triton](https://img.shields.io/badge/Triton-2.10-2?link=https%3A%2F%2Fgithub.com%2Fintel%2Fintel-xpu-backend-for-triton%2Freleases%2Ftag%2Fv2.1.0)
+[![paper](https://img.shields.io/badge/Paper-OpenReview-blue.svg)](https://openreview.net/forum?id=ftK00FO5wq)
 
 
 </div>
@@ -127,3 +128,17 @@ License
 The code and documentation in this repository are licensed under the Apache 2.0
 license. By contributing to this project, you agree that your
 contributions will be licensed under this license.
+
+Citation
+--------
+If you find this repo useful, please consider citing the corresponding paper:
+
+```bibtex
+@inproceedings{lee2024scaling,
+    title={Scaling Computational Performance of Spherical Harmonics Kernels with Triton},
+    author={Kin Long Kelvin Lee and Mikhail Galkin and Santiago Miret},
+    booktitle={AI for Accelerated Materials Design - Vienna 2024},
+    year={2024},
+    url={https://openreview.net/forum?id=ftK00FO5wq}
+}
+```
