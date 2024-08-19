@@ -72,3 +72,36 @@ def calculate_lastdim_num_blocks(input_tensor: torch.Tensor, block_size: int) ->
     numel = input_tensor.numel()
     total_blocks = math.ceil(numel / stride)
     return math.ceil(total_blocks / block_size)
+
+
+def unravel_index(tensor: torch.Tensor, index: int) -> tuple[int, ...]:
+    """
+    For a given N-d tensor and a 1D index, work out the corresponding
+    index tuple for the N-d tensor.
+
+    This is equivalent to the `torch.unravel_index` function, but
+    makes it a bit more friendlier in terms of Python types.
+
+    Parameters
+    ----------
+    tensor : torch.Tensor
+        Torch N-D tensor to index.
+    index : int
+        1D index value to map onto an N-tuple, where N
+        is the dimensionality of the tensor. Must be
+        greater or equal to zero, and smaller than the
+        total number of elements.
+
+    Returns
+    -------
+    tuple[int, ...]
+        An N-tuple of integers corresponding to the
+        N-d index of the provided index.
+    """
+    # make sure that the index is within bounds
+    assert 0 <= index < tensor.numel()
+    indices = []
+    for size in reversed(tensor.shape):
+        indices.append(index % size)
+        index //= size
+    return tuple(reversed(indices))
