@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import math
+
 import torch
 import triton
 
-__all__ = ["pad_tensor_to_power"]
+__all__ = ["pad_tensor_to_power", "calculate_lastdim_num_blocks"]
 
 
 def pad_tensor_to_power(
@@ -43,3 +45,30 @@ def pad_tensor_to_power(
     mask = torch.ones(pad_size, device=joint_tensor.device, dtype=torch.bool)
     mask[num_nodes:] = False
     return (joint_tensor, mask)
+
+
+def calculate_lastdim_num_blocks(input_tensor: torch.Tensor, block_size: int) -> int:
+    """
+    Calculate the number of blocks for a tensor, assuming we
+    stride along the last dimension, and a given block size.
+
+    This function is used to work out the amount of parallel
+    work that needs to be done, given as the total number of
+    elements divided by the last dimension stride, and a specified
+    block size that will then divvy up the work.
+
+    Parameters
+    ----------
+    input_tensor : torch.Tensor
+        Torch N-d tensor to operate over.
+
+    Returns
+    -------
+    int
+        Number of blocks of work, given a block size.
+    """
+    # get the stride of the last dimension
+    stride = input_tensor.stride()[-2]
+    numel = input_tensor.numel()
+    total_blocks = math.ceil(numel / stride)
+    return math.ceil(total_blocks / block_size)
