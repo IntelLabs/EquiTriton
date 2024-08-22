@@ -47,11 +47,15 @@ class SecondOrderSphericalHarmonic(torch.autograd.Function):
         return coord_grad_output
 
 
-def torch_second_order_fwd(coords: torch.Tensor) -> torch.Tensor:
+def _torch_fwd(coords: torch.Tensor) -> torch.Tensor:
     """
     PyTorch implementation of the kernel. This is designed
     purely for unit testing to ensure that the Triton implementation
     is behaving as intended.
+
+    This function is generically named to make it easier for
+    it to be called programmatically: it is _not_ intended
+    to be used manually.
 
     Parameters
     ----------

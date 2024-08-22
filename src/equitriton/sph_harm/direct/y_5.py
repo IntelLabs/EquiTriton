@@ -47,7 +47,7 @@ class FifthOrderSphericalHarmonic(torch.autograd.Function):
         return coord_grad_output
 
 
-def torch_fifth_order_fwd(coords: torch.Tensor) -> torch.Tensor:
+def _torch_fwd(coords: torch.Tensor) -> torch.Tensor:
     """
     PyTorch implementation of the kernel. This is designed
     purely for unit testing to ensure that the Triton implementation
