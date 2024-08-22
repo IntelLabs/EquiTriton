@@ -4,6 +4,8 @@ from triton import language as tl
 
 from equitriton.utils import calculate_lastdim_num_blocks
 
+__all__ = ["SecondOrderSphericalHarmonic"]
+
 
 class SecondOrderSphericalHarmonic(torch.autograd.Function):
     @staticmethod
