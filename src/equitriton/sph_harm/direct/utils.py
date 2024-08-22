@@ -42,7 +42,7 @@ def torch_spherical_harmonic(l: int, coords: torch.Tensor) -> torch.Tensor:
         is not equal to three.
     """
     try:
-        target_module = import_module(f"sph_harm.direct.y_{l}", "equitriton")
+        target_module = import_module(f"equitriton.sph_harm.direct.y_{l}")
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             f"Spherical harmonic order l={l} requested, but not found!"
@@ -92,16 +92,16 @@ def triton_spherical_harmonic(
         is not equal to three.
     """
     try:
-        target_module = import_module(f"sph_harm.direct.y_{l}", "equitriton")
+        target_module = import_module(f"equitriton.sph_harm.direct.y_{l}")
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             f"Spherical harmonic order l={l} requested, but not found!"
         ) from e
     defined_classes: list = getattr(target_module, "__all__")
     # there should only be one entry in __all__, which is the autograd wrapper
-    sph_harm_func = getattr(target_module, defined_classes.pop(), None)
+    sph_harm_func = getattr(target_module, defined_classes[0], None)
     if not sph_harm_func:
         raise RuntimeError(f"Triton implementation of l={l} not found.")
     if coords.size(-1) != 3:
         raise RuntimeError("Expects last dimension of coordinate tensor to be 3!")
-    return sph_harm_func.apply(coords, mask)
+    return sph_harm_func.apply(coords)
