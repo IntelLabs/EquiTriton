@@ -16,7 +16,7 @@ class TenthOrderSphericalHarmonic(torch.autograd.Function):
         block_size: int = 64,
     ):
         output_tensor = torch.empty(
-            (*coords.shape[:-1], 11), dtype=coords.dtype, device=coords.device
+            (*coords.shape[:-1], 21), dtype=coords.dtype, device=coords.device
         )
         coord_numel = coords.numel()
         output_numel = output_tensor.numel()
