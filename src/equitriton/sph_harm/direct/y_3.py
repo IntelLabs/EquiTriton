@@ -16,7 +16,7 @@ class ThirdOrderSphericalHarmonic(torch.autograd.Function):
         block_size: int = 64,
     ):
         output_tensor = torch.empty(
-            (*coords.shape[:-1], 5), dtype=coords.dtype, device=coords.device
+            (*coords.shape[:-1], 7), dtype=coords.dtype, device=coords.device
         )
         coord_numel = coords.numel()
         output_numel = output_tensor.numel()
@@ -89,13 +89,13 @@ def _torch_fwd(coords: torch.Tensor) -> torch.Tensor:
     VAR25 = z * z * z
     VAR26 = z * z
     # -------------------- kernel implementations
-    Y00 = CONST006*VAR07 - CONST008*VAR26*x
-    Y01 = CONST005*x*y*z
-    Y02 = CONST010*VAR07 + x*(CONST004*VAR17 + CONST010*VAR26)
-    Y03 = CONST000*VAR16 + CONST009*VAR08*y + CONST009*VAR26*y
-    Y04 = CONST010*VAR25 + z*(CONST004*VAR17 + CONST010*VAR08)
-    Y05 = CONST002*y*(CONST007*VAR08 + VAR26)
-    Y06 = -CONST006*VAR25 + CONST008*VAR08*z
+    Y00 = CONST006 * VAR07 - CONST008 * VAR26 * x
+    Y01 = CONST005 * x * y * z
+    Y02 = CONST010 * VAR07 + x * (CONST004 * VAR17 + CONST010 * VAR26)
+    Y03 = CONST000 * VAR16 + CONST009 * VAR08 * y + CONST009 * VAR26 * y
+    Y04 = CONST010 * VAR25 + z * (CONST004 * VAR17 + CONST010 * VAR08)
+    Y05 = CONST002 * y * (CONST007 * VAR08 + VAR26)
+    Y06 = -CONST006 * VAR25 + CONST008 * VAR08 * z
     tensors = [Y00, Y01, Y02, Y03, Y04, Y05, Y06]
     return torch.cat(tensors, dim=-1)
 
@@ -139,13 +139,13 @@ def third_order_fwd(
     VAR25 = z * z * z
     VAR26 = z * z
     # -------------------- kernel implementations
-    Y00 = CONST006*VAR07 - CONST008*VAR26*x
-    Y01 = CONST005*x*y*z
-    Y02 = CONST010*VAR07 + x*(CONST004*VAR17 + CONST010*VAR26)
-    Y03 = CONST000*VAR16 + CONST009*VAR08*y + CONST009*VAR26*y
-    Y04 = CONST010*VAR25 + z*(CONST004*VAR17 + CONST010*VAR08)
-    Y05 = CONST002*y*(CONST007*VAR08 + VAR26)
-    Y06 = -CONST006*VAR25 + CONST008*VAR08*z
+    Y00 = CONST006 * VAR07 - CONST008 * VAR26 * x
+    Y01 = CONST005 * x * y * z
+    Y02 = CONST010 * VAR07 + x * (CONST004 * VAR17 + CONST010 * VAR26)
+    Y03 = CONST000 * VAR16 + CONST009 * VAR08 * y + CONST009 * VAR26 * y
+    Y04 = CONST010 * VAR25 + z * (CONST004 * VAR17 + CONST010 * VAR08)
+    Y05 = CONST002 * y * (CONST007 * VAR08 + VAR26)
+    Y06 = -CONST006 * VAR25 + CONST008 * VAR08 * z
     output_stride = 7  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
     output_row_offset = output_striding + (block_size * output_stride * block_id)
@@ -246,9 +246,31 @@ def third_order_bwd(
     VAR17 = y * y
     VAR26 = z * z
     # -------------------- kernel implementations
-    g_x = CONST008*g_6*x*z - CONST009*g_1*y*z + CONST009*g_5*x*y + CONST010*g_3*x*y + CONST014*g_4*x*z + g_0*(CONST011*VAR08 - CONST011*VAR26) + g_2*(CONST002*VAR17 + CONST013*VAR08 + CONST015*VAR26)
-    g_y = CONST005*g_2*x*y + CONST005*g_4*y*z - CONST009*g_1*x*z + g_3*(CONST007*VAR08 + CONST007*VAR26 - CONST010*VAR17) + g_5*(CONST012*VAR08 - CONST012*VAR26)
-    g_z = -CONST008*g_0*x*z - CONST009*g_1*x*y - CONST009*g_5*y*z + CONST010*g_3*y*z + CONST014*g_2*x*z + g_4*(CONST002*VAR17 + CONST013*VAR26 + CONST015*VAR08) + g_6*(CONST011*VAR08 - CONST011*VAR26)
+    g_x = (
+        CONST008 * g_6 * x * z
+        - CONST009 * g_1 * y * z
+        + CONST009 * g_5 * x * y
+        + CONST010 * g_3 * x * y
+        + CONST014 * g_4 * x * z
+        + g_0 * (CONST011 * VAR08 - CONST011 * VAR26)
+        + g_2 * (CONST002 * VAR17 + CONST013 * VAR08 + CONST015 * VAR26)
+    )
+    g_y = (
+        CONST005 * g_2 * x * y
+        + CONST005 * g_4 * y * z
+        - CONST009 * g_1 * x * z
+        + g_3 * (CONST007 * VAR08 + CONST007 * VAR26 - CONST010 * VAR17)
+        + g_5 * (CONST012 * VAR08 - CONST012 * VAR26)
+    )
+    g_z = (
+        -CONST008 * g_0 * x * z
+        - CONST009 * g_1 * x * y
+        - CONST009 * g_5 * y * z
+        + CONST010 * g_3 * y * z
+        + CONST014 * g_2 * x * z
+        + g_4 * (CONST002 * VAR17 + CONST013 * VAR26 + CONST015 * VAR08)
+        + g_6 * (CONST011 * VAR08 - CONST011 * VAR26)
+    )
     # write out gradients
     tl.store(
         coord_grad_ptr + coord_row_offset, g_x, mask=coord_row_offset < coord_numel
