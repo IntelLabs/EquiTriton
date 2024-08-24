@@ -773,7 +773,7 @@ def eighth_order_bwd(
     z = tl.load(
         coord_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
     )
-    output_stride = 15  # [2l + 1]
+    output_stride = 17  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
     output_row_offset = output_striding + (block_size * output_stride * block_id)
     # load in gradients w.r.t. spherical harmonic projections
