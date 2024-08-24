@@ -10,7 +10,7 @@ from equitriton.sph_harm.direct.utils import (
 torch.manual_seed(316165)
 
 
-@pytest.mark.parametrize("order", [2, 3, 4, 5, 6, 7, 8, 10])
+@pytest.mark.parametrize("order", [2, 3, 4, 5, 6, 7, 8, 9, 10])
 @pytest.mark.parametrize(
     "device",
     [
@@ -48,7 +48,7 @@ def test_forward_equivalence(order, device, tensor_shape, dtype):
     assert torch.allclose(triton_out, torch_out, atol=1e-5, rtol=1e-3)
 
 
-@pytest.mark.parametrize("order", [2, 3, 4, 5, 6, 7, 8, 10])
+@pytest.mark.parametrize("order", [2, 3, 4, 5, 6, 7, 8, 9, 10])
 @pytest.mark.parametrize(
     "device",
     [
