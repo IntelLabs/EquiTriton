@@ -4,6 +4,7 @@ import math
 
 import torch
 import triton
+from e3nn import o3
 
 __all__ = ["pad_tensor_to_power", "calculate_lastdim_num_blocks"]
 
@@ -113,3 +114,36 @@ def unravel_index(tensor: torch.Tensor, index: int) -> tuple[int, ...]:
         indices.append(index % size)
         index //= size
     return tuple(reversed(indices))
+
+
+def spherical_harmonics_irreps(l_values: list[int], num_feat: int = 1) -> o3.Irreps:
+    """
+    Generate the set of irreducible representations given a list of
+    arbitrary l values; i.e. they need not be contiguous.
+
+    While ``l_values`` does not need to be contiguous, this function
+    will sort in ascending order of ``l``, such that the returned
+    representations are in order. This makes it a lot more straightforward
+    for building off of.
+
+    Parameters
+    ----------
+    l_values : list[int]
+        List of l values to generate representations for.
+    num_feat : int
+        Number of features for the associated representations.
+        Defaults to 1, which can be used for specifying a spherical
+        harmonic basis, but values greater than one can be used to
+        specify weights.
+
+    Returns
+    -------
+    o3.Irreps
+        Irreducible representations for the set of spherical harmonics.
+    """
+    assert num_feat > 1, "Number of features must be positive!"
+    joint = []
+    for l in sorted(l_values):
+        parity = "e" if (-1) ** l > 0 else "o"
+        joint.append(f"{num_feat}x{l}{parity}")
+    return o3.Irreps("+".join(joint))
