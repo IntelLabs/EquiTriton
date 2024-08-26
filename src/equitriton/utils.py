@@ -141,7 +141,7 @@ def spherical_harmonics_irreps(l_values: list[int], num_feat: int = 1) -> o3.Irr
     o3.Irreps
         Irreducible representations for the set of spherical harmonics.
     """
-    assert num_feat > 1, "Number of features must be positive!"
+    assert num_feat > 0, "Number of features must be positive!"
     joint = []
     for l in sorted(l_values):
         parity = "e" if (-1) ** l > 0 else "o"
