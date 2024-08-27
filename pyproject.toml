@@ -33,6 +33,12 @@ dev = [
   "pytest-pretty",
   "jupyter"
 ]
+train = [
+  "torch-geometric",
+  "torch-scatter",
+  "torch-sparse",
+  "pytorch-lightning==2.2.4"
+]
 
 [tool.setuptools.dynamic]
 readme = {file = ["README.md"]}
