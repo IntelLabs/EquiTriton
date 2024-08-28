@@ -8,10 +8,10 @@ from pytorch_lightning.cli import LightningCLI
 import torch
 from torch.optim.adamw import AdamW
 from torch import nn
-from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from torch_geometric.datasets import QM9
 from torch_geometric.data import Data as PyGGraph
+from torch_geometric.loader import DataLoader
 
 
 class LightningQM9(pl.LightningDataModule):
