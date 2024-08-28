@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import e3nn
 from e3nn import o3
+from e3nn import nn as e3nn_nn
 from torch_scatter import scatter
 from matplotlib import pyplot as plt
 from torch_geometric.data import Data as PyGGraph
@@ -219,7 +220,7 @@ class InteractionBlock(nn.Module):
         self.spherical_harmonics = SphericalHarmonicEmbedding(
             l_values, **sph_harm_kwargs
         )
-        self.fc = e3nn.nn.FullyConnectedNet(
+        self.fc = e3nn_nn.FullyConnectedNet(
             [edge_dim, hidden_dim, self.tensor_product.weight_numel], activation
         )
 
