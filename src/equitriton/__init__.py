@@ -26,4 +26,4 @@ if "PATCH_E3NN" in environ:
     if _will_patch:
         from equitriton import patch  # noqa: F401
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
