@@ -80,27 +80,33 @@ class LightningQM9(pl.LightningDataModule):
         self.splits = {"train": train_split, "val": val_split, "test": test_split}
 
     def train_dataloader(self):
+        num_workers = self.hparams["num_workers"]
         return DataLoader(
             self.splits["train"],
             batch_size=self.hparams["batch_size"],
             shuffle=True,
-            num_workers=self.hparams["num_workers"],
+            num_workers=num_workers,
+            persistent_workers=True if num_workers > 0 else False,
         )
 
     def val_dataloader(self):
+        num_workers = self.hparams["num_workers"]
         return DataLoader(
             self.splits["val"],
             batch_size=self.hparams["batch_size"],
             shuffle=False,
-            num_workers=self.hparams["num_workers"],
+            num_workers=num_workers,
+            persistent_workers=True if num_workers > 0 else False,
         )
 
     def test_dataloader(self):
+        num_workers = self.hparams["num_workers"]
         return DataLoader(
             self.splits["test"],
             batch_size=self.hparams["batch_size"],
             shuffle=False,
-            num_workers=self.hparams["num_workers"],
+            num_workers=num_workers,
+            persistent_workers=True if num_workers > 0 else False,
         )
 
 
@@ -227,5 +233,8 @@ class EquiTritonLitModule(pl.LightningModule):
 
 
 if __name__ == "__main__":
+    torch.multiprocessing.set_start_method("spawn")
     # use LightningCLI for easy configuration
-    cli = LightningCLI(EquiTritonLitModule, LightningQM9)
+    cli = LightningCLI(
+        EquiTritonLitModule, LightningQM9, save_config_kwargs={"overwrite": True}
+    )
