@@ -1,10 +1,87 @@
 from __future__ import annotations
 
 from importlib import import_module
+from typing import Callable
 
 import torch
 
 __all__ = ["torch_spherical_harmonic", "triton_spherical_harmonic"]
+
+
+def _get_fwd_kernel(l: int) -> Callable:
+    """
+    Reach into the module of a specified l value and grab
+    the corresponding forward Triton kernel function.
+
+    Parameters
+    ----------
+    l : int
+        Spherical harmonic l value to search for.
+
+    Returns
+    -------
+    Callable
+        Triton forward kernel
+
+    Raises
+    ------
+    ModuleNotFoundError:
+        If the l value is not implemented, the module will
+        not exist and raises a ``ModuleNotFoundError``.
+    RuntimeError:
+        If the module exists but we aren't able to find
+        a forward kernel defined, it's broken.
+    """
+    try:
+        target_module = import_module(f"equitriton.sph_harm.direct.y_{l}")
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            f"Spherical harmonic order l={l} requested, but not found!"
+        ) from e
+    defined_objs = dir(target_module)
+    for key in defined_objs:
+        if "order_fwd" in key:
+            sph_harm_func = getattr(target_module, key)
+            return sph_harm_func
+    raise RuntimeError(f"Namespace for module l={l} is broken!")
+
+
+def _get_bwd_kernel(l: int) -> Callable:
+    """
+    Reach into the module of a specified l value and grab
+    the corresponding backward Triton kernel function.
+
+    Parameters
+    ----------
+    l : int
+        Spherical harmonic l value to search for.
+
+    Returns
+    -------
+    Callable
+        Triton backward kernel
+
+    Raises
+    ------
+    ModuleNotFoundError:
+        If the l value is not implemented, the module will
+        not exist and raises a ``ModuleNotFoundError``.
+    RuntimeError:
+        If the module exists but we aren't able to find
+        a backward kernel defined, it's broken.
+    """
+    try:
+        target_module = import_module(f"equitriton.sph_harm.direct.y_{l}")
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            f"Spherical harmonic order l={l} requested, but not found!"
+        ) from e
+    defined_objs = dir(target_module)
+    for key in defined_objs:
+        if "order_bwd" in key:
+            sph_harm_func = getattr(target_module, key)
+            return sph_harm_func
+    raise RuntimeError(f"Namespace for module l={l} is broken!")
 
 
 def torch_spherical_harmonic(l: int, coords: torch.Tensor) -> torch.Tensor:
