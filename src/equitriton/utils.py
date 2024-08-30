@@ -10,7 +10,26 @@ __all__ = [
     "pad_tensor_to_power",
     "calculate_lastdim_num_blocks",
     "spherical_harmonics_irreps",
+    "num_irreps_projections",
 ]
+
+
+def num_irreps_projections(l: int) -> int:
+    """
+    Calculate the number of projections for a given order
+    of spherical harmonic.
+
+    Parameters
+    ----------
+    l : int
+        Order of spherical harmonic.
+
+    Returns
+    -------
+    int
+        Number of projections, i.e. 2l + 1
+    """
+    return 2 * l + 1
 
 
 def pad_tensor_to_power(
