@@ -6,7 +6,11 @@ import torch
 import triton
 from e3nn import o3
 
-__all__ = ["pad_tensor_to_power", "calculate_lastdim_num_blocks"]
+__all__ = [
+    "pad_tensor_to_power",
+    "calculate_lastdim_num_blocks",
+    "spherical_harmonics_irreps",
+]
 
 
 def pad_tensor_to_power(
