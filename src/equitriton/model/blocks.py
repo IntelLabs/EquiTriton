@@ -394,6 +394,45 @@ class EquiTritonModel(nn.Module):
         fig.tight_layout()
         return fig, axarray
 
+    def embed(self, graph: PyGGraph) -> dict[str, tuple[str, torch.Tensor]]:
+        """
+        Generate embeddings for a given graph, either batched or
+        unbatched.
+
+        This proceeds more or less the same way as the ``forward``
+        pass, but instead emits a dictionary that maps each layer name
+        with both the embedding at that layer as well as the irreducible
+        representations.
+        """
+        # determine if the graph is batched or not
+        is_batched = hasattr(graph, "ptr")
+        for key in ["pos", "edge_index", "z"]:
+            assert hasattr(graph, key)
+        # get atom embeddings
+        atom_z = self.atomic_embedding(graph.z)  # [nodes, initial_atom_dim]
+        # first message passing step
+        z = self.initial_layer(atom_z, graph.pos, graph.edge_index)
+        outputs = {
+            "initial": (
+                str(self.initial_layer.output_irreps),
+                z.detach().clone().cpu(),
+            ),
+        }
+        for layer_name, layer in self.conv_layers.items():
+            new_z = layer(z, graph.pos, graph.edge_index)
+            # add residual connections
+            if self.skip_connections and new_z.shape == z.shape:
+                new_z += z
+            z = new_z
+            outputs[layer_name] = (str(layer.output_irreps), z.detach().clone().cpu())
+        if is_batched:
+            graph_z = scatter(z, graph.batch, dim=0, dim_size=graph.batch_size)
+        else:
+            # for a single graph, just sum up the node features
+            graph_z = z.sum(dim=0, keepdims=True)
+        outputs["graph_z"] = (str(layer.output_irreps), graph_z.detach().clone().cpu())
+        return outputs
+
     def forward(self, graph: PyGGraph) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass for a generic equivariant convolution model.
