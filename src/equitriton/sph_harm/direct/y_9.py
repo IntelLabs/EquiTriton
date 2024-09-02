@@ -1399,7 +1399,16 @@ def ninth_order_bwd(
     VAR22 = VAR25 * VAR25
     VAR23 = VAR25 * VAR26
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         g_0
         * (
             CONST021 * VAR20
@@ -1618,7 +1627,7 @@ def ninth_order_bwd(
             )
         )
     )
-    g_y = (
+    g_y += (
         CONST001
         * g_16
         * y
@@ -1838,7 +1847,7 @@ def ninth_order_bwd(
             + CONST070 * VAR02
         )
     )
-    g_z = (
+    g_z += (
         g_0
         * (
             CONST132 * VAR07 * VAR23
