@@ -12,28 +12,37 @@ class ThirdOrderSphericalHarmonic(torch.autograd.Function):
     def forward(
         ctx,
         coords: torch.Tensor,
+        output_tensor: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
         block_size: int = 64,
+        col_offset: int = 0,
     ):
-        output_tensor = torch.empty(
-            (*coords.shape[:-1], 7), dtype=coords.dtype, device=coords.device
-        )
+        # allocate a tensor if one isn't given
+        if not isinstance(output_tensor, torch.Tensor):
+            output_tensor = torch.empty(
+                (*coords.shape[:-1], 7), dtype=coords.dtype, device=coords.device
+            )
         coord_numel = coords.numel()
         output_numel = output_tensor.numel()
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # apply the kernel
         third_order_fwd[num_blocks,](
-            coords, output_tensor, block_size, coord_numel, output_numel
+            coords, output_tensor, block_size, coord_numel, output_numel, col_offset
         )
         ctx.save_for_backward(coords)
         return output_tensor
 
     @staticmethod
     def backward(
-        ctx, sph_grad_tensor: torch.Tensor, block_size: int = 64
+        ctx,
+        sph_grad_tensor: torch.Tensor,
+        coord_grad_output: torch.Tensor | None = None,
+        block_size: int = 64,
+        col_offset: int = 0,
     ) -> torch.Tensor:
         (coords,) = ctx.saved_tensors
-        coord_grad_output = torch.zeros_like(coords)
+        if not isinstance(coord_grad_output, torch.Tensor):
+            coord_grad_output = torch.zeros_like(coords)
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # call backward kernel
         third_order_bwd[num_blocks,](
@@ -43,6 +52,7 @@ class ThirdOrderSphericalHarmonic(torch.autograd.Function):
             block_size,
             coords.numel(),
             sph_grad_tensor.numel(),
+            col_offset,
         )
         return coord_grad_output
 
@@ -107,6 +117,8 @@ def third_order_fwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # these are hardcoded because they are predetermined;
     coord_stride = 3
@@ -146,9 +158,11 @@ def third_order_fwd(
     Y04 = CONST010 * VAR25 + z * (CONST004 * VAR17 + CONST010 * VAR08)
     Y05 = CONST002 * y * (CONST007 * VAR08 + VAR26)
     Y06 = -CONST006 * VAR25 + CONST008 * VAR08 * z
-    output_stride = 7  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    # zero on the row offset is the first spherical harmonic term of this order
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     tl.store(output_ptr + output_row_offset, Y00, mask=output_row_offset < output_numel)
     tl.store(
         output_ptr + output_row_offset + 1,
@@ -190,6 +204,8 @@ def third_order_bwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # work out the row offsets
     block_id = tl.program_id(0)
@@ -205,9 +221,11 @@ def third_order_bwd(
     z = tl.load(
         coord_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
     )
-    output_stride = 7  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    # zero on the row offset is the first spherical harmonic term of this order
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     # load in gradients w.r.t. spherical harmonic projections
     g_0 = tl.load(
         sph_grad_ptr + output_row_offset, mask=output_row_offset < output_numel

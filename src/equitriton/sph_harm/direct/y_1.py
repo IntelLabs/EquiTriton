@@ -14,6 +14,7 @@ class FirstOrderSphericalHarmonic(torch.autograd.Function):
         coords: torch.Tensor,
         mask: torch.Tensor | None = None,
         block_size: int = 64,
+        col_offset: int = 0,
     ):
         output_tensor = torch.empty(
             (*coords.shape[:-1], 3), dtype=coords.dtype, device=coords.device
@@ -23,14 +24,14 @@ class FirstOrderSphericalHarmonic(torch.autograd.Function):
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # apply the kernel
         first_order_fwd[num_blocks,](
-            coords, output_tensor, block_size, coord_numel, output_numel
+            coords, output_tensor, block_size, coord_numel, output_numel, col_offset
         )
         ctx.save_for_backward(coords)
         return output_tensor
 
     @staticmethod
     def backward(
-        ctx, sph_grad_tensor: torch.Tensor, block_size: int = 64
+        ctx, sph_grad_tensor: torch.Tensor, block_size: int = 64, col_offset: int = 0
     ) -> torch.Tensor:
         (coords,) = ctx.saved_tensors
         coord_grad_output = torch.zeros_like(coords)
@@ -42,6 +43,7 @@ class FirstOrderSphericalHarmonic(torch.autograd.Function):
             block_size,
             coords.numel(),
             sph_grad_tensor.numel(),
+            col_offset,
         )
         return coord_grad_output
 
@@ -85,6 +87,8 @@ def first_order_fwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # these are hardcoded because they are predetermined;
     coord_stride = 3
@@ -104,9 +108,10 @@ def first_order_fwd(
     Y10 = CONST_00 * x
     Y11 = CONST_00 * y
     Y12 = CONST_00 * z
-    output_stride = 3  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     tl.store(output_ptr + output_row_offset, Y10, mask=output_row_offset < output_numel)
     tl.store(
         output_ptr + output_row_offset + 1,
@@ -122,11 +127,14 @@ def first_order_fwd(
 
 @triton.jit
 def first_order_bwd(
+    coord_ptr: tl.tensor,  # noqa: F403
     coord_grad_ptr: tl.tensor,
     sph_grad_ptr: tl.tensor,
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # work out the row offsets
     block_id = tl.program_id(0)
@@ -135,9 +143,10 @@ def first_order_bwd(
     coord_striding = tl.arange(0, block_size) * coord_stride
     # as the name suggests, this is effectively every node/atom
     coord_row_offset = coord_striding + (block_size * coord_stride * block_id)
-    output_stride = 3  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     # load in gradients w.r.t. spherical harmonic projections
     g_Y10 = tl.load(
         sph_grad_ptr + output_row_offset, mask=output_row_offset < output_numel
@@ -148,10 +157,20 @@ def first_order_bwd(
     g_Y12 = tl.load(
         sph_grad_ptr + output_row_offset + 2, mask=output_row_offset + 2 < output_numel
     )
+    # read in current gradients
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
     CONST_00 = tl.sqrt(3.0)
-    g_x = CONST_00 * g_Y10
-    g_y = CONST_00 * g_Y11
-    g_z = CONST_00 * g_Y12
+    g_x += CONST_00 * g_Y10
+    g_y += CONST_00 * g_Y11
+    g_z += CONST_00 * g_Y12
     # write out gradients
     tl.store(
         coord_grad_ptr + coord_row_offset, g_x, mask=coord_row_offset < coord_numel
