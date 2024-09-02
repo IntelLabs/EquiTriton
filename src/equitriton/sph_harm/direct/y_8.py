@@ -374,6 +374,8 @@ def eighth_order_fwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # these are hardcoded because they are predetermined;
     coord_stride = 3
@@ -664,9 +666,10 @@ def eighth_order_fwd(
         + CONST074 * VAR04 * VAR26
         + CONST074 * VAR08 * VAR22
     )
-    output_stride = 17  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     tl.store(output_ptr + output_row_offset, Y00, mask=output_row_offset < output_numel)
     tl.store(
         output_ptr + output_row_offset + 1,
@@ -758,6 +761,8 @@ def eighth_order_bwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # work out the row offsets
     block_id = tl.program_id(0)
@@ -773,9 +778,10 @@ def eighth_order_bwd(
     z = tl.load(
         coord_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
     )
-    output_stride = 17  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     # load in gradients w.r.t. spherical harmonic projections
     g_0 = tl.load(
         sph_grad_ptr + output_row_offset, mask=output_row_offset < output_numel
