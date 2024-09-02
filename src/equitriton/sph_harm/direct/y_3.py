@@ -27,7 +27,13 @@ class ThirdOrderSphericalHarmonic(torch.autograd.Function):
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # apply the kernel
         third_order_fwd[num_blocks,](
-            coords, output_tensor, block_size, coord_numel, output_numel, col_offset
+            coords,
+            output_tensor,
+            block_size,
+            coord_numel,
+            output_numel,
+            col_offset,
+            output_tensor.stride(-2),
         )
         ctx.save_for_backward(coords)
         return output_tensor
@@ -53,6 +59,7 @@ class ThirdOrderSphericalHarmonic(torch.autograd.Function):
             coords.numel(),
             sph_grad_tensor.numel(),
             col_offset,
+            sph_grad_tensor.stride(-2),
         )
         return coord_grad_output
 
