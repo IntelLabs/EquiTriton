@@ -152,6 +152,8 @@ def second_order_bwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # work out the row offsets
     block_id = tl.program_id(0)
@@ -167,9 +169,10 @@ def second_order_bwd(
     z = tl.load(
         coord_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
     )
-    output_stride = 5  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     CONST_00 = 3.87298334620742
     CONST_01 = 2.23606797749979
     CONST_02 = 4.47213595499958
