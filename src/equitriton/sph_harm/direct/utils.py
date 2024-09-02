@@ -13,6 +13,43 @@ __all__ = ["torch_spherical_harmonic", "triton_spherical_harmonic"]
 BLOCK_SIZE = 64
 
 
+def _get_autograd_func(l: int) -> type[torch.autograd.Function]:
+    """
+    Function that will grab the autograd.Function for a specified
+    l order.
+
+    Parameters
+    ----------
+    l : int
+        Order of spherical harmonic to compute.
+
+    Returns
+    -------
+    type[torch.autograd.Function]
+        Class reference to the autograd Function.
+
+    Raises
+    ------
+    ModuleNotFoundError:
+        If the order of spherical harmonic is not implemented,
+        the module will not exist.
+    RuntimeError:
+        If the autograd.Function can't be found.
+    """
+    try:
+        target_module = import_module(f"equitriton.sph_harm.direct.y_{l}")
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            f"Spherical harmonic order l={l} requested, but not found!"
+        ) from e
+    defined_objs = dir(target_module)
+    for key in defined_objs:
+        if "SphericalHarmonic" in key:
+            sph_harm_func = getattr(target_module, key)
+            return sph_harm_func
+    raise RuntimeError(f"Namespace for module l={l} is broken!")
+
+
 def _get_fwd_kernel(l: int) -> Callable:
     """
     Reach into the module of a specified l value and grab
@@ -196,7 +233,7 @@ def triton_spherical_harmonic(
         requires_grad=True,
     )
     for l, offset in zip(l_values, offsets):
-        sph_harm_func = _get_fwd_kernel(l)
+        sph_harm_func = _get_autograd_func(l)
         sph_harm_func.apply(coords, output_tensor, mask, BLOCK_SIZE, offset)
     return output_tensor
 
