@@ -559,7 +559,16 @@ def sixth_order_bwd(
     VAR23 = VAR25 * VAR26
     VAR24 = VAR26 * VAR26
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         g_0 * (CONST054 * VAR08 * VAR25 - CONST065 * VAR06 * z - CONST080 * VAR23)
         + g_1 * y * (CONST028 * VAR06 + CONST028 * VAR24 + CONST048 * VAR08 * VAR26)
         + g_10
@@ -619,7 +628,7 @@ def sixth_order_bwd(
         + g_9
         * (CONST053 * VAR16 * x * z + y * (CONST042 * VAR07 * z - CONST073 * VAR25 * x))
     )
-    g_y = (
+    g_y += (
         CONST000 * g_2 * y * (CONST066 * VAR07 * z - CONST066 * VAR25 * x)
         + g_1 * (CONST007 * VAR05 + CONST028 * VAR24 * x + CONST062 * VAR07 * VAR26)
         + g_10
@@ -669,7 +678,7 @@ def sixth_order_bwd(
             + CONST083 * VAR23
         )
     )
-    g_z = (
+    g_z += (
         g_0 * (CONST054 * VAR07 * VAR26 - CONST065 * VAR24 * x - CONST080 * VAR05)
         + g_1 * y * (CONST052 * VAR07 * z - CONST052 * VAR25 * x)
         + g_10
