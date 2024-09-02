@@ -787,7 +787,16 @@ def seventh_order_bwd(
     VAR23 = VAR25 * VAR26
     VAR24 = VAR26 * VAR26
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         g_0
         * (
             CONST082 * VAR08 * VAR24
@@ -881,7 +890,7 @@ def seventh_order_bwd(
             + y * (CONST018 * VAR24 * x + CONST119 * VAR05 + CONST131 * VAR07 * VAR26)
         )
     )
-    g_y = (
+    g_y += (
         g_1 * (CONST039 * VAR23 * x + CONST095 * VAR07 * VAR25 - CONST125 * VAR05 * z)
         + g_10
         * (
@@ -970,7 +979,7 @@ def seventh_order_bwd(
             - CONST152 * VAR22
         )
     )
-    g_z = (
+    g_z += (
         g_0 * (CONST069 * VAR07 * VAR25 - CONST109 * VAR05 * z - CONST109 * VAR23 * x)
         + g_1
         * y
