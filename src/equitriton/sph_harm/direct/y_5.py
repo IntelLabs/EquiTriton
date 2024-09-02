@@ -12,25 +12,37 @@ class FifthOrderSphericalHarmonic(torch.autograd.Function):
     def forward(
         ctx,
         coords: torch.Tensor,
+        output_tensor: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
         block_size: int = 64,
+        col_offset: int = 0,
     ):
-        output_tensor = torch.empty(
-            (*coords.shape[:-1], 11), dtype=coords.dtype, device=coords.device
-        )
+        if not isinstance(output_tensor, torch.Tensor):
+            output_tensor = torch.empty(
+                (*coords.shape[:-1], 11), dtype=coords.dtype, device=coords.device
+            )
         coord_numel = coords.numel()
         output_numel = output_tensor.numel()
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # apply the kernel
         fifth_order_fwd[num_blocks,](
-            coords, output_tensor, block_size, coord_numel, output_numel
+            coords,
+            output_tensor,
+            block_size,
+            coord_numel,
+            output_numel,
+            col_offset,
+            output_tensor.stride(-2),
         )
         ctx.save_for_backward(coords)
         return output_tensor
 
     @staticmethod
     def backward(
-        ctx, sph_grad_tensor: torch.Tensor, block_size: int = 64
+        ctx,
+        sph_grad_tensor: torch.Tensor,
+        block_size: int = 64,
+        col_offset: int = 0,
     ) -> torch.Tensor:
         (coords,) = ctx.saved_tensors
         coord_grad_output = torch.zeros_like(coords)
@@ -43,6 +55,8 @@ class FifthOrderSphericalHarmonic(torch.autograd.Function):
             block_size,
             coords.numel(),
             sph_grad_tensor.numel(),
+            col_offset,
+            sph_grad_tensor.stride(-2),
         )
         return coord_grad_output
 
