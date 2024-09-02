@@ -15,15 +15,24 @@ class SecondOrderSphericalHarmonic(torch.autograd.Function):
         mask: torch.Tensor | None = None,
         block_size: int = 64,
     ):
+        num_projections = 5  # 2l + 1
         output_tensor = torch.empty(
-            (*coords.shape[:-1], 5), dtype=coords.dtype, device=coords.device
+            (*coords.shape[:-1], num_projections),
+            dtype=coords.dtype,
+            device=coords.device,
         )
         coord_numel = coords.numel()
         output_numel = output_tensor.numel()
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
         # apply the kernel
         second_order_fwd[num_blocks,](
-            coords, output_tensor, block_size, coord_numel, output_numel
+            coords,
+            output_tensor,
+            block_size,
+            coord_numel,
+            output_numel,
+            0,
+            num_projections,
         )
         ctx.save_for_backward(coords)
         return output_tensor
@@ -32,6 +41,7 @@ class SecondOrderSphericalHarmonic(torch.autograd.Function):
     def backward(
         ctx, sph_grad_tensor: torch.Tensor, block_size: int = 64
     ) -> torch.Tensor:
+        num_projections = 5  # 2l + 1
         (coords,) = ctx.saved_tensors
         coord_grad_output = torch.zeros_like(coords)
         num_blocks = calculate_lastdim_num_blocks(coords, block_size)
@@ -43,6 +53,8 @@ class SecondOrderSphericalHarmonic(torch.autograd.Function):
             block_size,
             coords.numel(),
             sph_grad_tensor.numel(),
+            0,
+            num_projections,
         )
         return coord_grad_output
 
