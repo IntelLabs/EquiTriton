@@ -60,10 +60,27 @@ def zeroth_order_fwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # work out the row offsets
     block_id = tl.program_id(0)
-    output_stride = 1  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     tl.store(output_ptr + output_row_offset, 1.0, mask=output_row_offset < output_numel)
+
+
+@triton.jit
+def zeroth_order_bwd(
+    output_ptr: tl.tensor,
+    block_size: tl.constexpr,
+    coord_numel: tl.constexpr,
+    output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
+):
+    # work out the row offsets
+    block_id = tl.program_id(0)  # noqa: F841
+    # do nothing in this function because no gradient contributions!
