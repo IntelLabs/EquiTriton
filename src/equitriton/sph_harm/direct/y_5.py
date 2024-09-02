@@ -452,7 +452,16 @@ def fifth_order_bwd(
     VAR25 = z * z * z
     VAR26 = z * z
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         g_0 * (CONST009 * VAR06 + CONST009 * VAR24 + CONST040 * VAR08 * VAR26)
         + g_1 * y * (CONST038 * VAR08 * z - CONST052 * VAR25)
         + g_10 * (CONST029 * VAR07 * z + CONST043 * VAR25 * x)
@@ -478,7 +487,7 @@ def fifth_order_bwd(
         + g_8 * (CONST008 * VAR25 * x + z * (CONST039 * VAR17 * x - CONST054 * VAR07))
         + g_9 * y * (CONST024 * VAR07 + CONST038 * VAR26 * x)
     )
-    g_y = (
+    g_y += (
         g_1 * (CONST052 * VAR07 * z - CONST052 * VAR25 * x)
         + g_2 * (-CONST039 * VAR26 * x * y + CONST053 * VAR07 * y)
         + g_3 * (CONST058 * VAR07 * z + x * (CONST034 * VAR17 * z + CONST057 * VAR25))
@@ -501,7 +510,7 @@ def fifth_order_bwd(
         + g_8 * (CONST021 * VAR25 * y + CONST039 * VAR08 * y * z)
         + g_9 * (CONST027 * VAR06 + CONST027 * VAR24 + CONST044 * VAR08 * VAR26)
     )
-    g_z = (
+    g_z += (
         g_0 * (CONST029 * VAR25 * x + CONST043 * VAR07 * z)
         + g_1 * y * (-CONST038 * VAR26 * x + CONST052 * VAR07)
         + g_10 * (CONST009 * VAR06 + CONST009 * VAR24 + CONST040 * VAR08 * VAR26)
