@@ -56,6 +56,7 @@ def _torch_fwd(coords: torch.Tensor) -> torch.Tensor:
 
 @triton.jit
 def zeroth_order_fwd(
+    coord_ptr: tl.tensor,
     output_ptr: tl.tensor,
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
