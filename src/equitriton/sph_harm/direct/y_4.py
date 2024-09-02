@@ -337,7 +337,16 @@ def fourth_order_bwd(
     VAR25 = z * z * z
     VAR26 = z * z
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         CONST015 * g_7 * x * y * z
         + CONST022 * g_5 * x * y * z
         + g_0 * (CONST017 * VAR08 * z - CONST025 * VAR25)
@@ -349,7 +358,7 @@ def fourth_order_bwd(
         + g_6 * (-CONST016 * VAR07 + CONST019 * VAR17 * x)
         + g_8 * (CONST017 * VAR26 * x - CONST025 * VAR07)
     )
-    g_y = (
+    g_y += (
         CONST000 * g_6 * y * (CONST023 * VAR08 - CONST023 * VAR26)
         + CONST014 * g_2 * x * y * z
         + g_1 * (-CONST020 * VAR26 * x + CONST027 * VAR07)
@@ -358,7 +367,7 @@ def fourth_order_bwd(
         + g_5 * (CONST026 * VAR25 + z * (CONST012 * VAR17 + CONST026 * VAR08))
         + g_7 * (CONST020 * VAR08 * z - CONST027 * VAR25)
     )
-    g_z = (
+    g_z += (
         -CONST015 * g_1 * x * y * z
         + CONST022 * g_3 * x * y * z
         + g_0 * (-CONST017 * VAR26 * x + CONST025 * VAR07)
