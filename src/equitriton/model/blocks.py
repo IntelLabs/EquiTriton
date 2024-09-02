@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from torch_geometric.data import Data as PyGGraph
 
 from equitriton.utils import spherical_harmonics_irreps
-from equitriton.sph_harm.direct import triton_spherical_harmonic
+from equitriton.sph_harm.direct import TritonSphericalHarmonic
 
 
 __all__ = [
@@ -124,9 +124,7 @@ class SphericalHarmonicEmbedding(nn.Module):
         if not self.use_e3nn:
             if self.normalize:
                 coords = torch.nn.functional.normalize(coords, dim=-1)
-            # TODO concatenation is slow; work directly on pre-allocated tensors
-            outputs = [triton_spherical_harmonic(l, coords) for l in self.l_values]
-            outputs = torch.cat(outputs, dim=-1)
+            outputs = TritonSphericalHarmonic.apply(self.l_values, coords)
             if self.normalization == "integral":
                 outputs /= (4.0 * torch.pi) ** 0.5
             return outputs
