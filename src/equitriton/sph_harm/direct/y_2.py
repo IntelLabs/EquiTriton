@@ -91,6 +91,8 @@ def second_order_fwd(
     block_size: tl.constexpr,
     coord_numel: tl.constexpr,
     output_numel: tl.constexpr,
+    col_offset: tl.constexpr,
+    output_stride: tl.constexpr,
 ):
     # these are hardcoded because they are predetermined;
     coord_stride = 3
@@ -115,9 +117,10 @@ def second_order_fwd(
     Y23 = CONST_00 * y * z  # looks jarring but just helping the compiler ;)
     Y22 = CONST_02 * x * x + CONST_01 * y * y + CONST_02 * z * z
     Y24 = -CONST_03 * x * x + CONST_03 * z * z
-    output_stride = 5  # [2l + 1]
     output_striding = tl.arange(0, block_size) * output_stride
-    output_row_offset = output_striding + (block_size * output_stride * block_id)
+    output_row_offset = (
+        output_striding + (block_size * output_stride * block_id) + col_offset
+    )
     tl.store(output_ptr + output_row_offset, Y20, mask=output_row_offset < output_numel)
     tl.store(
         output_ptr + output_row_offset + 1,
