@@ -1050,7 +1050,16 @@ def eighth_order_bwd(
     VAR22 = VAR25 * VAR25
     VAR23 = VAR25 * VAR26
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         g_0
         * (
             CONST049 * VAR08 * VAR23
@@ -1205,7 +1214,7 @@ def eighth_order_bwd(
             * (CONST117 * VAR14 * x + CONST170 * VAR05 * y + CONST171 * VAR07 * VAR16)
         )
     )
-    g_y = (
+    g_y += (
         CONST000
         * g_14
         * y
@@ -1355,7 +1364,7 @@ def eighth_order_bwd(
             )
         )
     )
-    g_z = (
+    g_z += (
         g_0
         * (
             -CONST049 * VAR05 * VAR26
