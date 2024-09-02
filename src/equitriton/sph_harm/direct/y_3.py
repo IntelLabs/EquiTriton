@@ -271,7 +271,16 @@ def third_order_bwd(
     VAR17 = y * y
     VAR26 = z * z
     # -------------------- kernel implementations
-    g_x = (
+    g_x = tl.load(
+        coord_grad_ptr + coord_row_offset, mask=coord_row_offset < coord_numel
+    )
+    g_y = tl.load(
+        coord_grad_ptr + coord_row_offset + 1, mask=coord_row_offset + 1 < coord_numel
+    )
+    g_z = tl.load(
+        coord_grad_ptr + coord_row_offset + 2, mask=coord_row_offset + 2 < coord_numel
+    )
+    g_x += (
         CONST008 * g_6 * x * z
         - CONST009 * g_1 * y * z
         + CONST009 * g_5 * x * y
@@ -280,14 +289,14 @@ def third_order_bwd(
         + g_0 * (CONST011 * VAR08 - CONST011 * VAR26)
         + g_2 * (CONST002 * VAR17 + CONST013 * VAR08 + CONST015 * VAR26)
     )
-    g_y = (
+    g_y += (
         CONST005 * g_2 * x * y
         + CONST005 * g_4 * y * z
         - CONST009 * g_1 * x * z
         + g_3 * (CONST007 * VAR08 + CONST007 * VAR26 - CONST010 * VAR17)
         + g_5 * (CONST012 * VAR08 - CONST012 * VAR26)
     )
-    g_z = (
+    g_z += (
         -CONST008 * g_0 * x * z
         - CONST009 * g_1 * x * y
         - CONST009 * g_5 * y * z
