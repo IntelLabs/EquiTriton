@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections import Counter
 import math
 
 import torch
 import triton
+import numpy as np
 from e3nn import o3
 
 __all__ = [
@@ -170,3 +172,37 @@ def spherical_harmonics_irreps(l_values: list[int], num_feat: int = 1) -> o3.Irr
         parity = "e" if (-1) ** l > 0 else "o"
         joint.append(f"{num_feat}x{l}{parity}")
     return o3.Irreps("+".join(joint))
+
+
+def separate_embedding_irreps(
+    embeddings: torch.Tensor, irreps: o3.Irreps, return_numpy: bool = True
+) -> dict[int, torch.Tensor]:
+    """
+    Utility function that will split a joint embedding tensor
+    into embeddings for individual orders.
+
+    Parameters
+    ----------
+    embeddings : torch.Tensor
+        PyTorch N-d tensor containing embeddings for all irreps.
+    irreps : o3.Irreps
+        Object containing information on which orders of
+        representations, and how many.
+
+    Returns
+    -------
+    dict[int, torch.Tensor]
+        Dictionary mapping a tensor chunk with its corresponding order.
+    """
+    # just for safety, clone the tensor for chunking
+    embeddings = embeddings.detach().cpu()
+    irrep_dims = dict(Counter(irreps.ls))
+    splits = np.cumsum(list(irrep_dims.values())).tolist()
+    return_dict = {}
+    chunks = torch.tensor_split(embeddings, splits, dim=-1)
+    # should be an extra empty chunk but zip should skip it
+    for key, chunk in zip(irrep_dims.keys(), chunks):
+        if return_numpy:
+            chunk = chunk.numpy()
+        return_dict[key] = chunk
+    return return_dict
