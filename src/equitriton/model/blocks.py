@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Literal, Any, Callable
+from collections import Counter
 
 import torch
 from torch import nn
@@ -368,6 +369,12 @@ class EquiTritonModel(nn.Module):
         )
         self.skip_connections = skip_connections
         self.output_dim = output_dim
+
+    @property
+    def output_irrep_shapes(self) -> dict[str, int]:
+        # this returns a dictionary for each l-order, the number
+        # of expected elements for that particular order in the output
+        return dict(Counter(self.initial_layer.output_irreps.ls))
 
     def visualize(self, **kwargs):
         """
