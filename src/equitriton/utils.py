@@ -176,7 +176,7 @@ def spherical_harmonics_irreps(l_values: list[int], num_feat: int = 1) -> o3.Irr
 
 
 def separate_embedding_irreps(
-    embeddings: torch.Tensor, irreps: o3.Irreps, return_numpy: bool = True
+    embeddings: torch.Tensor | np.ndarray, irreps: o3.Irreps, return_numpy: bool = True
 ) -> dict[int, torch.Tensor]:
     """
     Utility function that will split a joint embedding tensor
@@ -196,7 +196,10 @@ def separate_embedding_irreps(
         Dictionary mapping a tensor chunk with its corresponding order.
     """
     # just for safety, clone the tensor for chunking
-    embeddings = embeddings.detach().cpu()
+    if isinstance(embeddings, torch.Tensor):
+        embeddings = embeddings.detach().cpu()
+    if isinstance(embeddings, np.ndarray):
+        embeddings = torch.from_numpy(embeddings)
     irrep_dims = dict(Counter(irreps.ls))
     splits = np.cumsum(list(irrep_dims.values())).tolist()
     return_dict = {}
