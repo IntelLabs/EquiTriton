@@ -13,6 +13,7 @@ __all__ = [
     "calculate_lastdim_num_blocks",
     "spherical_harmonics_irreps",
     "num_irreps_projections",
+    "separate_embedding_irreps",
 ]
 
 
