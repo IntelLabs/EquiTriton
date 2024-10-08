@@ -11,17 +11,42 @@ from tqdm import tqdm
 from phate import PHATE
 from e3nn import o3
 import pytorch_lightning as pl
+from torch_geometric.data import Data
 
 from equitriton.model.lightning import EquiTritonLitModule, LightningQM9
 from equitriton.utils import separate_embedding_irreps
 
 
-def graph_to_rdkit(batched_graph):
+def graph_to_rdkit(batched_graph: Data) -> Chem.Mol:
+    """
+    Simple list comprehension to unpack a batch into SMILES, then ``Mol``
+    objects.
+
+    Parameters
+    ----------
+    batched_graph : Data
+        Batched graph structure from QM9 that contains multiple
+        individual molecules. Individual SMILES are extracted from
+        the ``smiles`` attribute.
+    """
     mols = [Chem.MolFromSmiles(smi, sanitize=False) for smi in batched_graph.smiles]
     return mols
 
 
-def score_molecule(molecule) -> dict[str, int]:
+def score_molecule(molecule: Chem.Mol) -> dict[str, int]:
+    """
+    Given an RDKit molecule, compute the NSPS related metrics.
+
+    Parameters
+    ----------
+    molecule : Chem.Mol
+        Molecule representation in RDKit.
+
+    Returns
+    -------
+    dict[str, int]
+        Dictionary mapping of property and value.
+    """
     enum = {"SP": 1, "SP2": 2, "SP3": 3}
     scores = {"stereo": 0, "hybrid": 0, "aromatic": 0, "heavy_atoms": 0}
     for atom in tqdm(
@@ -61,6 +86,34 @@ def calculate_scores_for_batch(molecules) -> list[dict[str, int]]:
 def run_phate_projection(
     results: list[dict], irreps: o3.Irreps, **phate_kwargs
 ) -> dict[str, np.ndarray]:
+    """
+    Wrapper function that applies the PHATE method to individual
+    irreducible representations, given a set of ``o3.Irreps``.
+
+    We apply the same PHATE hyperparameters to each decomposed
+    irreducible representation, followed by the same method
+    applied to the joint embeddings (i.e. a vector comprising
+    all representations).
+
+    Parameters
+    ----------
+    results : list[dict]
+        List of dictionaries containing the results from inference,
+        which contains graph embeddings under the ``embeddings`` key.
+    irreps : o3.Irreps
+        Object corresponding to the group of irreducible representations
+        contained in the set of embeddings. This is passed into the
+        ``separate_embedding_irreps`` function that splits them into
+        a order/vector mapping.
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        Dictionary mapping of keys (irrep. order) and PHATE projections.
+        Each order key is represented by the number, with the exception
+        of ``full`` which contains PHATE projections for the joint graph
+        embeddings.
+    """
     phate_kwargs.setdefault("knn", 10)
     phate_kwargs.setdefault("random_state", 21516)
     embeddings = torch.vstack([r["embeddings"][1] for r in results]).numpy()
@@ -110,7 +163,7 @@ def main():
     all_smi = []
     all_error = []
     score_dict = {}
-    for index, batch in tqdm(
+    for _, batch in tqdm(
         enumerate(test_loader),
         desc="Batches to process",
         leave=False,
