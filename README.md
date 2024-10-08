@@ -116,7 +116,8 @@ sph_harm = TritonSphericalHarmonic.apply(
 
 The improvements to performance are expected to come from (1) decoupling of each spherical
 harmonic order, and (2) pre-allocation of an output tensor as to avoid using `torch.cat`,
-which calculates each order followed by copying.
+which calculates each order followed by copying. See the "Direct spherical harmonics evaluation"
+notebook in the notebooks folder for derivation.
 
 ### Development and usage on Intel XPU
 
