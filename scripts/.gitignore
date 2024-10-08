@@ -1,3 +1,4 @@
 qm9_data/
 wandb/
 lightning_logs/
+artifacts/
