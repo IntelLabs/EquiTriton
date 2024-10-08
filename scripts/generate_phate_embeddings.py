@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from pathlib import Path
 from argparse import ArgumentParser
+from pathlib import Path
 
-import torch
-from rdkit import Chem
-import wandb
 import numpy as np
-from tqdm import tqdm
-from phate import PHATE
-from e3nn import o3
 import pytorch_lightning as pl
+import torch
+import wandb
+from e3nn import o3
+from phate import PHATE
+from rdkit import Chem
 from torch_geometric.data import Data
+from tqdm import tqdm
 
 from equitriton.model.lightning import EquiTritonLitModule, LightningQM9
 from equitriton.utils import separate_embedding_irreps
