@@ -131,7 +131,9 @@ contributions will be licensed under this license.
 
 Citation
 --------
-If you find this repo useful, please consider citing the corresponding paper:
+If you find this repo useful, please consider citing the respective papers.
+
+For the original EquiTriton implementation, please use/read the following citation:
 
 ```bibtex
 @inproceedings{lee2024scaling,
@@ -140,5 +142,17 @@ If you find this repo useful, please consider citing the corresponding paper:
     booktitle={AI for Accelerated Materials Design - Vienna 2024},
     year={2024},
     url={https://openreview.net/forum?id=ftK00FO5wq}
+}
+```
+
+For the refactored spherical harmonics up to $l=10$, and subsequent PHATE embedding analysis, see:
+
+```bibtex
+@inproceedings{lee2024deconstructing,
+    title={Deconstructing equivariant representations in molecular systems},
+    author={Kin Long Kelvin Lee and Mikhail Galkin and Santiago Miret},
+    booktitle={AI for Accelerated Materials Design - NeurIPS 2024},
+    year={2024},
+    url={https://openreview.net/forum?id=pshyLoyzRn}
 }
 ```
