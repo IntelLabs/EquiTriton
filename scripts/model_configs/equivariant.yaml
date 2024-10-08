@@ -12,13 +12,13 @@ trainer:
       project: "equitriton-qm9"
       entity: "laserkelvin"
       log_model: true
-  callbacks:
-    - class_path: pytorch_lightning.callbacks.EarlyStopping
-      init_args:
-        monitor: "val_loss_epoch"
-        patience: 5
-        mode: "min"
-  max_epochs: 300
+  #callbacks:
+  #  - class_path: pytorch_lightning.callbacks.EarlyStopping
+  #    init_args:
+  #      monitor: "val_loss_epoch"
+  #      patience: 5
+  #      mode: "min"
+  max_epochs: 100
   min_epochs: 15
 model:
   model_class: equitriton.model.EquiTritonModel

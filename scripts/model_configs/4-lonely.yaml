@@ -26,7 +26,7 @@ model:
     initial_atom_dim: 64
     num_layers: 3
     output_dim: 1
-    l_values: [0, 1, 2, 5, 6]  # is a higher order odd/even pair
+    l_values: [0, 1, 2, 4]  # is a higher order odd/even pair
     edge_dim: 20
     hidden_dim: 32
     radius_cutoff: 6.0

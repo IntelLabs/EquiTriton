@@ -11,24 +11,23 @@ trainer:
     init_args:
       project: "equitriton-qm9"
       entity: "laserkelvin"
-      log_model: true
+      log_model: "all"
   #callbacks:
   #  - class_path: pytorch_lightning.callbacks.EarlyStopping
   #    init_args:
   #      monitor: "val_loss_epoch"
   #      patience: 5
   #      mode: "min"
-  max_epochs: 100
-  min_epochs: 15
+  max_epochs: 30
 model:
   model_class: equitriton.model.EquiTritonModel
   model_kwargs:
     initial_atom_dim: 64
     num_layers: 3
     output_dim: 1
-    l_values: [0, 1, 2, 5, 6]  # is a higher order odd/even pair
+    l_values: [0, 1, 2, 3, 4, 5, 6]  # not quite up to ten
     edge_dim: 20
-    hidden_dim: 32
+    hidden_dim: 16
     radius_cutoff: 6.0
     degree_norm: 6.08275253  # sqrt(37), avg degree
     sph_harm_kwargs:

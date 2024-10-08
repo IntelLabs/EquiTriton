@@ -12,13 +12,14 @@ trainer:
       project: "equitriton-qm9"
       entity: "laserkelvin"
       log_model: true
-  callbacks:
-    - class_path: pytorch_lightning.callbacks.EarlyStopping
-      init_args:
-        monitor: "val_loss_epoch"
-        patience: 5
-        mode: "min"
-  max_epochs: 300
+      tags: ["baseline"]
+  #callbacks:
+  #  - class_path: pytorch_lightning.callbacks.EarlyStopping
+  #    init_args:
+  #      monitor: "val_loss_epoch"
+  #      patience: 5
+  #      mode: "min"
+  max_epochs: 100
   min_epochs: 15
 model:
   model_class: equitriton.model.EquiTritonModel
@@ -28,7 +29,7 @@ model:
     output_dim: 1
     l_values: [0,]
     edge_dim: 20
-    hidden_dim: 512
+    hidden_dim: 128
     radius_cutoff: 6.0
     degree_norm: 6.08275253  # sqrt(37), avg degree
     sph_harm_kwargs:

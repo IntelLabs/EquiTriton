@@ -12,6 +12,7 @@ trainer:
       project: "equitriton-qm9"
       entity: "laserkelvin"
       log_model: true
+      tags: ["baseline", "e3nn"]
   #callbacks:
   #  - class_path: pytorch_lightning.callbacks.EarlyStopping
   #    init_args:
@@ -26,13 +27,13 @@ model:
     initial_atom_dim: 64
     num_layers: 3
     output_dim: 1
-    l_values: [0, 1, 2, 5, 6]  # is a higher order odd/even pair
+    l_values: [0,1,2]
     edge_dim: 20
     hidden_dim: 32
     radius_cutoff: 6.0
     degree_norm: 6.08275253  # sqrt(37), avg degree
     sph_harm_kwargs:
-      use_e3nn: false
+      use_e3nn: true
   e_mean: -76.1160
   e_std: 10.3238
   lr: 0.001
