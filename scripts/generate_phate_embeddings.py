@@ -9,8 +9,11 @@ import wandb
 import numpy as np
 from tqdm import tqdm
 from phate import PHATE
+from e3nn import o3
+import pytorch_lightning as pl
 
 from equitriton.model.lightning import EquiTritonLitModule, LightningQM9
+from equitriton.utils import separate_embedding_irreps
 
 
 def graph_to_rdkit(batched_graph):
@@ -55,14 +58,26 @@ def calculate_scores_for_batch(molecules) -> list[dict[str, int]]:
     return scores
 
 
-def run_phate_projection(results: list[dict], **phate_kwargs) -> np.ndarray:
+def run_phate_projection(
+    results: list[dict], irreps: o3.Irreps, **phate_kwargs
+) -> dict[str, np.ndarray]:
     phate_kwargs.setdefault("knn", 10)
     phate_kwargs.setdefault("random_state", 21516)
-    # collect up all the embeddings
     embeddings = torch.vstack([r["embeddings"][1] for r in results]).numpy()
+    # separate embeddings into individual chunks
+    chunk_dict = separate_embedding_irreps(embeddings, irreps, return_numpy=True)
+    embeddings_dict = {}
+    for order, chunk in chunk_dict.items():
+        print(f"Running PHATE on order {order}")
+        # collect up all the embeddings
+        phate = PHATE(**phate_kwargs)
+        phate_embeddings = phate.fit_transform(chunk)
+        embeddings_dict[order] = phate_embeddings
+    # run once more on the full embedding set
     phate = PHATE(**phate_kwargs)
     phate_embeddings = phate.fit_transform(embeddings)
-    return phate_embeddings
+    embeddings_dict["full"] = phate_embeddings
+    return embeddings_dict
 
 
 def main():
@@ -70,6 +85,7 @@ def main():
     parser.add_argument(
         "artifact_path", type=str, help="wandb path to a model artifact."
     )
+    pl.seed_everything(215162)
 
     args = parser.parse_args()
 
@@ -85,27 +101,81 @@ def main():
     ckpt_path = Path(artifact_dir).joinpath("model.ckpt")
 
     datamodule = LightningQM9("./qm9_data", num_workers=0)
-    model = EquiTritonLitModule.load_from_checkpoint(str(ckpt_path))
+    model = EquiTritonLitModule.load_from_checkpoint(str(ckpt_path)).eval()
 
     datamodule.setup("test")
     test_loader = datamodule.test_dataloader()
 
     results = []
+    all_smi = []
+    all_error = []
+    score_dict = {}
     for index, batch in tqdm(
-        enumerate(test_loader), desc="Batches to process", leave=False, position=1
+        enumerate(test_loader),
+        desc="Batches to process",
+        leave=False,
+        position=1,
+        total=len(test_loader),
     ):
         embeddings = model.model.embed(batch.to("cuda"))
+        with torch.no_grad():
+            g_z, z = model.model(batch)
+            pred_energies = model.output_head(g_z)
+            # un-normalize energy
+            pred_energies = (model.hparams["e_std"] * pred_energies) + model.hparams[
+                "e_mean"
+            ]
+            # retrieve targets
+            target_energies = batch.y[:, 12].unsqueeze(-1)
+            error = (pred_energies - target_energies).pow(2.0).cpu().tolist()
         mols = graph_to_rdkit(batch)
         scores = calculate_scores_for_batch(mols)
         package = {
             "embeddings": embeddings["graph_z"],
             "scores": scores,
             "smi": batch.smiles,
+            "error": error,
         }
+        all_smi.extend(batch.smiles)
+        all_error.extend(error)
+        # reformat scores into a flat dictionary
+        for score in scores:
+            for key, value in score.items():
+                if key not in score_dict:
+                    score_dict[key] = []
+                score_dict[key].append(value)
         results.append(package)
-    phate_embeddings = run_phate_projection(results)
+    print("Running PHATE on each Irreps")
+    phate_embeddings = run_phate_projection(
+        results, model.model.initial_layer.output_irreps
+    )
     to_save = {"phate": phate_embeddings, "data": results}
+    # save a local version of the results
     torch.save(to_save, Path(artifact_dir).joinpath("results.pt"))
+    # formatting stuff to log to wandb
+    embedding_table = wandb.Table(
+        columns=["F1", "F2"], data=phate_embeddings["full"].tolist()
+    )
+    for key, array in phate_embeddings.items():
+        if key != "full":
+            for axis in [0, 1]:
+                embedding_table.add_column(name=f"O{key}_{axis}", data=array[:, axis])
+    # this initializes the table
+    joint_table = wandb.Table(columns=["smiles"])
+    # i'm not sure why, but the table kept fussing about not being
+    # to add the list of smiles directly, which is why it's written as a loop
+    for smi in all_smi:
+        joint_table.add_data(smi)
+    joint_table.add_column(name="squared_error_eV", data=all_error)
+    # now add the descriptors as well
+    for key, value in score_dict.items():
+        joint_table.add_column(name=key, data=value)
+    # package stuff up and log to wandb
+    inference_artifact = wandb.Artifact("qm9_inference", type="eval")
+    inference_artifact.add(embedding_table, "phate")
+    inference_artifact.add(joint_table, "descriptors")
+    inference_run.log_artifact(inference_artifact)
+    wandb.finish()
 
 
 if __name__ == "__main__":
