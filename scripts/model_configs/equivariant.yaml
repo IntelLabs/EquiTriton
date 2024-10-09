@@ -1,0 +1,46 @@
+#pytorch_lightning==2.2.4
+seed_everything: 21616
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: null
+  logger:
+    class_path: pytorch_lightning.loggers.WandbLogger
+    init_args:
+      project: "equitriton-qm9"
+      entity: "laserkelvin"
+      log_model: true
+  #callbacks:
+  #  - class_path: pytorch_lightning.callbacks.EarlyStopping
+  #    init_args:
+  #      monitor: "val_loss_epoch"
+  #      patience: 5
+  #      mode: "min"
+  max_epochs: 100
+  min_epochs: 15
+model:
+  model_class: equitriton.model.EquiTritonModel
+  model_kwargs:
+    initial_atom_dim: 64
+    num_layers: 3
+    output_dim: 1
+    l_values: [0, 1, 2]  # this is the canonical set
+    edge_dim: 20
+    hidden_dim: 32
+    radius_cutoff: 6.0
+    degree_norm: 6.08275253  # sqrt(37), avg degree
+    sph_harm_kwargs:
+      use_e3nn: false
+  e_mean: -76.1160
+  e_std: 10.3238
+  lr: 0.001
+  weight_decay: 0.0
+  atom_weighted_loss: false
+data:
+  root_path: ./qm9_data
+  batch_size: 32
+  train_frac: 0.8
+  val_frac: 0.1
+  num_workers: 4

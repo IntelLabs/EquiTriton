@@ -79,6 +79,46 @@ nodes and masking in the forward pass. The script `scripts/dynamic_shapes.py` wi
 let you test the performance over a range of shapes; we encourage you to test it
 before performing full-scale training/inference.
 
+## Decoupled spherical harmonics kernels
+
+We recently published a paper at the AI4Mat workshop at NeurIPS 2024, which as part
+of that work, we went back into ``sympy`` to refactor the spherical harmonics up to $l=10$,
+such that computations of a particular order are _independent_ from others. This allows
+arbitrary orders to be freely composed without incurring a performance penalty, in
+the case that one wishes to calculate $l=8$, but not $l=7$, for example.
+
+Functionally, these kernels are intended to behave in the same way as their original
+implementation, i.e. they still provide equivariant properties when used to map
+cartesian point clouds. However, because of the aggressive refactoring and heavy use
+of hard-coded literals, they may (or will) differ numerically from even the initial _EquiTriton_
+kernels, particularly at higher orders.
+
+> [!IMPORTANT]
+> For the above reason, while the kernels can be drop-in replacements, we do not recommend
+> using them from already trained models, at least without some testing on the user's part,
+> as the results may differ. We have also not yet attempted to use these kernels as part of
+> simulation-based workflows (i.e. molecular dynamics), however our training experiments do
+> show that training indeed does converge.
+
+To use the new set of decoupled kernels, the main `torch.autograd` binding is through
+the `equitriton.sph_harm.direct.TritonSphericalHarmonic`:
+
+```python
+import torch
+from equitriton.sph_harm.direct import TritonSphericalHarmonic
+
+coords = torch.rand(100, 3)
+sph_harm = TritonSphericalHarmonic.apply(
+  l_values=[0, 1, 2, 6, 10],
+  coords=coords
+)
+```
+
+The improvements to performance are expected to come from (1) decoupling of each spherical
+harmonic order, and (2) pre-allocation of an output tensor as to avoid using `torch.cat`,
+which calculates each order followed by copying. See the "Direct spherical harmonics evaluation"
+notebook in the notebooks folder for derivation.
+
 ### Development and usage on Intel XPU
 
 Development on Intel XPUs such as the Data Center GPU Max Series 1550 requires
@@ -131,7 +171,9 @@ contributions will be licensed under this license.
 
 Citation
 --------
-If you find this repo useful, please consider citing the corresponding paper:
+If you find this repo useful, please consider citing the respective papers.
+
+For the original EquiTriton implementation, please use/read the following citation:
 
 ```bibtex
 @inproceedings{lee2024scaling,
@@ -140,5 +182,17 @@ If you find this repo useful, please consider citing the corresponding paper:
     booktitle={AI for Accelerated Materials Design - Vienna 2024},
     year={2024},
     url={https://openreview.net/forum?id=ftK00FO5wq}
+}
+```
+
+For the refactored spherical harmonics up to $l=10$, and subsequent PHATE embedding analysis, see:
+
+```bibtex
+@inproceedings{lee2024deconstructing,
+    title={Deconstructing equivariant representations in molecular systems},
+    author={Kin Long Kelvin Lee and Mikhail Galkin and Santiago Miret},
+    booktitle={AI for Accelerated Materials Design - NeurIPS 2024},
+    year={2024},
+    url={https://openreview.net/forum?id=pshyLoyzRn}
 }
 ```
