@@ -8,6 +8,7 @@ from logging import getLogger
 import torch
 import numpy as np
 import pandas as pd
+import e3nn
 from e3nn.o3._spherical_harmonics import _spherical_harmonics
 
 from equitriton.sph_harm.bindings import *
@@ -82,11 +83,14 @@ def e3nn_benchmark(tensor_shape: list[int], device: str | torch.device, l_max: i
         joint_tensor[..., 1].contiguous(),
         joint_tensor[..., 2].contiguous(),
     )
-    output = _spherical_harmonics(l_max, x, y, z)
+    e3nn.set_optimization_defaults(jit_script_fx=False)
+    output = torch.compile(_spherical_harmonics, fullgraph=True, mode="max-autotune")(l_max, x, y, z)
     output.backward(gradient=torch.ones_like(output))
     # delete references to ensure memory gets cleared
     del output
     del joint_tensor
+    e3nn.set_optimization_defaults(jit_script_fx=True) # Turn it back on to avoid any issues 
+
 
 
 @benchmark(num_steps=args.num_steps, warmup_fraction=args.warmup_fraction)
