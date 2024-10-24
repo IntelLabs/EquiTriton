@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 
 import torch
 import numpy as np
+import e3nn
 from e3nn.o3._spherical_harmonics import _spherical_harmonics
 
 from equitriton.sph_harm.bindings import *
@@ -73,7 +74,8 @@ def compare_e3nn_triton(
         joint_tensor[..., 1].contiguous(),
         joint_tensor[..., 2].contiguous(),
     )
-    e3nn_output = _spherical_harmonics(l_max, x, y, z)
+    e3nn.set_optimization_defaults(jit_script_fx=False)
+    e3nn_output = torch.compile(_spherical_harmonics, fullgraph=True, mode="max-autotune")(l_max, x, y, z)
     e3nn_output.backward(gradient=torch.ones_like(e3nn_output))
     e3nn_grad = joint_tensor.grad.detach().clone()
     joint_tensor.grad = None
@@ -95,6 +97,7 @@ def compare_e3nn_triton(
     # delete intermediate tensors to make sure we don't leak
     del e3nn_output
     del triton_output
+    e3nn.set_optimization_defaults(jit_script_fx=True) # Turn it back on to avoid any issues 
     return (signed_fwd_error, signed_bwd_error)
 
 
