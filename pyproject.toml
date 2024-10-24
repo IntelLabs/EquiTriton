@@ -39,7 +39,7 @@ train = [
   "torch-scatter",
   "torch-sparse",
   "torch-cluster",
-  "pytorch-lightning==2.2.4",
+  "pytorch-lightning==2.4.0",
   "jsonargparse[signatures]"
 ]
 
