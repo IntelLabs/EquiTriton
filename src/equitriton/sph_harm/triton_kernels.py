@@ -198,9 +198,6 @@ def _triton_second_order_bwd(
     g_x += -1.0 * sqrt_15 * x * g_2_4
     g_z += sqrt_15 * z * g_2_4
     # after all the operations are done, write back to memory
-    g_x_start = g_x_ptr + offset
-    g_y_start = g_y_ptr + offset
-    g_z_start = g_z_ptr + offset
     tl.store(g_x_ptr + offset, g_x, mask=offset < vector_length)
     tl.store(g_y_ptr + offset, g_y, mask=offset < vector_length)
     tl.store(g_z_ptr + offset, g_z, mask=offset < vector_length)
@@ -426,9 +423,6 @@ def _triton_third_order_bwd(
         * (1.08012344973464 * sq_x + 0.540061724867322 * sq_x - 1.62018517460196 * sq_z)
     )
     # after all the operations are done, write back to memory
-    g_x_start = g_x_ptr + offset
-    g_y_start = g_y_ptr + offset
-    g_z_start = g_z_ptr + offset
     tl.store(g_x_ptr + offset, g_x, mask=offset < vector_length)
     tl.store(g_y_ptr + offset, g_y, mask=offset < vector_length)
     tl.store(g_z_ptr + offset, g_z, mask=offset < vector_length)
@@ -940,9 +934,6 @@ def _triton_fourth_order_bwd(
         )
     )
     # after all the operations are done, write back to memory
-    g_x_start = g_x_ptr + offset
-    g_y_start = g_y_ptr + offset
-    g_z_start = g_z_ptr + offset
     tl.store(g_x_ptr + offset, g_x, mask=offset < vector_length)
     tl.store(g_y_ptr + offset, g_y, mask=offset < vector_length)
     tl.store(g_z_ptr + offset, g_z, mask=offset < vector_length)
