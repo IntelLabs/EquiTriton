@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools <= 80.9.0"]
+requires = ["setuptools <= 82.0.0"]
 
 [project]
 authors = [
@@ -39,7 +39,7 @@ train = [
   "torch-scatter",
   "torch-sparse",
   "torch-cluster",
-  "pytorch-lightning==2.5.5",
+  "pytorch-lightning==2.6.1",
   "jsonargparse[signatures]"
 ]
 
