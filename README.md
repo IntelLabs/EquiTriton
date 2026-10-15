@@ -1,3 +1,10 @@
+> [!WARNING]
+> **THIS PROJECT IS ARCHIVED**  
+> Intel will not provide or guarantee development of or support for this project,
+> including but not limited to, maintenance, bug fixes, new releases or updates.
+>
+> Patches to this project are no longer accepted by Intel.
+
 # EquiTriton
 [![CodeQL](https://github.com/ossf/scorecard-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/IntelLabs/EquiTriton/actions/workflows/codeql-analysis.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/IntelLabs/EquiTriton/badge)](https://scorecard.dev/viewer/?uri=github.com/IntelLabs/EquiTriton)
